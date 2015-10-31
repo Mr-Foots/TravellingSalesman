@@ -8,4 +8,4 @@ f = open('testCases/berlin52.txt', 'r')
 p = parseFile(f)
 
 nodes = p[1]['nodes']
-
+evo.main()

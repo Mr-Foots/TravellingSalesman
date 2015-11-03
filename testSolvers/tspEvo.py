@@ -7,7 +7,8 @@ class GeneticOperations():
 		self.params = {
 			'populationSize': 20,
 			'tournamentNumber': 3,
-			'generationNumber': 1
+			'generationNumber': 1,
+			'mutationRate': .1
 		}
 	def distance(self, p1, p2):
 		#calculates distance from two points
@@ -45,7 +46,7 @@ class GeneticOperations():
 		#to find the sequences with the lowest travel time, the fitness values are sorted and matched aganist the orginal dictionary
 		fitnessRanked = sorted(map(int, list(fitnessLink.keys())))
 		mate = (fitnessLink[str(fitnessRanked[0])], fitnessLink[str(fitnessRanked[1])])
-		
+
 		return mate
 
 
@@ -54,8 +55,21 @@ class GeneticOperations():
 	def crossover(self):
 		pass
 
-	def mutation(self):
-		pass
+	#NEEDS TO BE TESTED
+	def mutation(self, children):
+		point1, point2 = ''
+
+		for child in children:
+			r = random.randint(1,100)
+			if r == self.params.mutationRate:
+				while point1 == point2:
+					point1 = random.choice(child)
+					point2 = random.choice(child)
+
+				child[child.index(point1)] = point2
+				child[child.index(point2)] = point1
+
+
 
 
 
@@ -84,7 +98,7 @@ def generatePopulation(size,eleSize):
 
 def Evolution(population, params):
 
-
+	#TERMINATION CONDITION GOES HERE
 	for x in range(0, generationNumber):
 		mates = []
 

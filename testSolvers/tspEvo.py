@@ -68,7 +68,7 @@ class GeneticOperations():
 
 
 
-
+#Function will create initial Population. Size is length of pop, eleSize is length of TSP
 def generatePopulation(size,eleSize):
 	
 	P = [] #holds population
@@ -91,7 +91,7 @@ def generatePopulation(size,eleSize):
 	return P
 
 
-
+#Controlling Evolution function. Actual generation iteration happens here
 def Evolution(population, params):
 
 	#TERMINATION CONDITION GOES HERE
@@ -101,7 +101,6 @@ def Evolution(population, params):
 		#run for half the population. Each mate pair will make two children
 		for x in range(0, int(params['populationSize']/2)): 
 			mates.append(G.tournamentSelection(population))
-		while 
 
 
 

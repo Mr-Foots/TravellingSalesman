@@ -19,17 +19,23 @@ class GeneticOperations():
 
 	def tournamentSelection(self, population):
 		fitnessLink = {}
+
 		#randomly selects n number of candidates from the population
 		selectedIndividuals = random.sample(population, self.params['tournamentNumber'])
+		print("Selected Individuals: \n")
+		print(selectedIndividuals)
 
-		for indvidulal in selectedIndividuals:
+		for individual in selectedIndividuals:
 			fitnessLink[str(self.fitnessEvaluation(individual))] = individual
 
+		print("Fitness Link: \n")
+		print(fitnessLink,end='\n')
 		#to find the sequences with the lowest travel time, the fitness values are sorted and matched aganist the orginal dictionary
 		fitnessOrdered = sorted(map(int, fitnessLink.keys()))
-		matingPair = (fitnessLink[str(fitnessRanked[0])], fitnessLink[str(fitnessRanked[1])])
-		
-		return mates
+		matingPair = (fitnessLink[str(fitnessOrdered[0])], fitnessLink[str(fitnessOrdered[1])])
+		print("Mating Pairs: \n")
+		print(matingPair,end='\n\n')
+		return matingPair
 
 
 	def fitnessEvaluation(self, individual):
@@ -38,16 +44,19 @@ class GeneticOperations():
 
 		#loop will go through each node and calculate the distance between the two of them
 		for i in range(1, len(individual)):
-			p1 = Nodes[str(candidiate[i-1])]
-			p2 = Nodes[str(candidiate[i])]
+			p1 = Nodes[str(individual[i-1])]
+			p2 = Nodes[str(individual[i])]
 			travelCost += self.distance(p2, p1) #distance formula
 
 		return travelCost
 
 
 
-	def crossover(self):
-		pass
+	def crossover(self, mates):
+		mother = mates[0]
+		father = mates[1]
+
+
 
 
 
@@ -94,23 +103,34 @@ def generatePopulation(size,eleSize):
 
 #Controlling Evolution function. Actual generation iteration happens here
 def Evolution(population, params):
+	print(population, end='\n\n')
 
 	#TERMINATION CONDITION GOES HERE
-	for x in range(0, generationNumber):
+	for x in range(0, params['generationNumber']):
 		newPopulation = []
 		mates = []
 
 		#run for half the population. Each mate pair will make two children
 		for x in range(0, int(params['populationSize']/2)):
-			selected = G.tournamentSelection(population)
-			mates = G.fitnessEvaluation(selected)
+			mates = G.tournamentSelection(population)
+			continue
 			children = G.crossover(mates)
 			newPopulation.extend(children)
 
+		continue
 		for candidate in newPopulation:
 			#Attempts to mutate. If mutation does not occur then return candidate back to population to restart cycle
 			population.append(mutate(candidate, newPopulation))
 
+	lowestCost = 10**5
+	for individual in population:
+		cost = G.fitnessEvaluation(individual)
+		if cost < lowestCost:
+			lowestCost = cost
+			fittestIndividual = individual
+
+	print("Fittest Individual: " + ' '.join(list(map(str, individual))), end='\n')
+	print("Travel Cost: " + str(lowestCost),end='\n')
 
 
 def main():

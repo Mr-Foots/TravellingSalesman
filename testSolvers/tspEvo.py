@@ -8,7 +8,7 @@ class GeneticOperations():
 			'populationSize': 20,
 			'tournamentNumber': 3,
 			'generationNumber': 1,
-			'mutationRate': .1
+			'mutationRate': .01
 		}
 	def distance(self, p1, p2):
 		#calculates distance from two points
@@ -35,6 +35,7 @@ class GeneticOperations():
 	def fitnessEvaluation(self, individual):
 		travelCost = 0
 
+
 		#loop will go through each node and calculate the distance between the two of them
 		for i in range(1, len(individual)):
 			p1 = Nodes[str(candidiate[i-1])]
@@ -45,35 +46,35 @@ class GeneticOperations():
 
 
 
-
 	def crossover(self):
 		pass
 
 
 
 	#NEEDS TO BE TESTED
-	def mutation(self, children):
+	def mutation(self, candidiate):
 		point1, point2 = ''
 
-		for child in children:
-			r = random.randint(1,100)
-			if r == self.params.mutationRate:
-				while point1 == point2:
-					point1 = random.choice(child)
-					point2 = random.choice(child)
+		r = random.randint(1,100)
+		r = r/100
 
-				child[child.index(point1)] = point2
-				child[child.index(point2)] = point1
+		if r == self.params.mutationRate:
+			while point1 == point2:
+				point1 = random.choice(candidate)
+				point2 = random.choice(candidate)
 
-
-
+			candidate[candidate.index(point1)] = point2
+			candidate[candidate.index(point2)] = point1
+			return candidate
+		else:
+			return candidate
 
 #Function will create initial Population. Size is length of pop, eleSize is length of TSP
 def generatePopulation(size,eleSize):
-	
+
 	P = [] #holds population
 	lang = tuple([ x for x in range(2,eleSize+1) ]) #generating matching node names
-	
+
 	#Loop creates the n number of candidates
 	for candidiate in range(0, size):
 
@@ -86,7 +87,7 @@ def generatePopulation(size,eleSize):
 			selected = random.choice(poss) #randomly chooses a possible node
 			del poss[poss.index(selected)] #deletes that node so it doesnt repeat
 			chromosome.append(selected)
-		P.append(chromosome)		
+		P.append(chromosome)
 
 	return P
 
@@ -96,12 +97,19 @@ def Evolution(population, params):
 
 	#TERMINATION CONDITION GOES HERE
 	for x in range(0, generationNumber):
+		newPopulation = []
 		mates = []
 
 		#run for half the population. Each mate pair will make two children
-		for x in range(0, int(params['populationSize']/2)): 
-			mates.append(G.tournamentSelection(population))
+		for x in range(0, int(params['populationSize']/2)):
+			selected = G.tournamentSelection(population)
+			mates = G.fitnessEvaluation(selected)
+			children = G.crossover(mates)
+			newPopulation.extend(children)
 
+		for candidate in newPopulation:
+			#Attempts to mutate. If mutation does not occur then return candidate back to population to restart cycle
+			population.append(mutate(candidate, newPopulation))
 
 
 

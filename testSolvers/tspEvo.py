@@ -18,42 +18,38 @@ class GeneticOperations():
 
 
 	def tournamentSelection(self, population):
+		fitnessLink = {}
 		#randomly selects n number of candidates from the population
 		selectedIndividuals = random.sample(population, self.params['tournamentNumber'])
-		mates = self.fitnessEvaluation(selectedIndividuals)		#Sends the selected into fitnesseval, returns the mating candidates
 
+		for indvidulal in selectedIndividuals:
+			fitnessLink[str(self.fitnessEvaluation(individual))] = individual
+
+		#to find the sequences with the lowest travel time, the fitness values are sorted and matched aganist the orginal dictionary
+		fitnessOrdered = sorted(map(int, fitnessLink.keys()))
+		matingPair = (fitnessLink[str(fitnessRanked[0])], fitnessLink[str(fitnessRanked[1])])
+		
 		return mates
 
 
-	def fitnessEvaluation(self, selectedIndividuals):
-		fitnessLink = {}
-		fitnessRanked = []
+	def fitnessEvaluation(self, individual):
+		travelCost = 0
 
-		#loops through the candidates to calculate their distance
-		for index, candidiate in enumerate(selectedIndividuals):
-			pos = 0
-			travelCost = 0
+		#loop will go through each node and calculate the distance between the two of them
+		for i in range(1, len(individual)):
+			p1 = Nodes[str(candidiate[i-1])]
+			p2 = Nodes[str(candidiate[i])]
+			travelCost += self.distance(p2, p1) #distance formula
 
-			#loop will go through each node and calculate the distance between the two of them
-			while pos != len(candidiate)-1:
-				p1 = Nodes[str(candidiate[pos])]
-				p2 = Nodes[str(candidiate[pos+1])]
-				travelCost += self.distance(p2, p1) #distance formula
-				pos += 1
-
-			fitnessLink[str(travelCost)] = candidiate #create a dictionary for easy selection and matching to actual sequence
-
-		#to find the sequences with the lowest travel time, the fitness values are sorted and matched aganist the orginal dictionary
-		fitnessRanked = sorted(map(int, list(fitnessLink.keys())))
-		mate = (fitnessLink[str(fitnessRanked[0])], fitnessLink[str(fitnessRanked[1])])
-
-		return mate
+		return travelCost
 
 
 
 
 	def crossover(self):
 		pass
+
+
 
 	#NEEDS TO BE TESTED
 	def mutation(self, children):

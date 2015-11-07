@@ -18,27 +18,31 @@ class GeneticOperations():
 
 
 	def tournamentSelection(self, population):
+		"""
+			Function will select three individuals, then make the mating pair
+			fitnessLink maps the sequence to the fitness Value for easy comparison and sorting
+		"""
+
 		fitnessLink = {}
 
-		#randomly selects n number of candidates from the population
+		#randomly selects n number of candidates from the population. Sample is great because it cannot select repeats
 		selectedIndividuals = random.sample(population, self.params['tournamentNumber'])
-		print("Selected Individuals: \n")
-		print(selectedIndividuals)
+
 
 		for individual in selectedIndividuals:
 			fitnessLink[str(self.fitnessEvaluation(individual))] = individual
 
-		print("Fitness Link: \n")
-		print(fitnessLink,end='\n')
+
 		#to find the sequences with the lowest travel time, the fitness values are sorted and matched aganist the orginal dictionary
 		fitnessOrdered = sorted(map(int, fitnessLink.keys()))
 		matingPair = (fitnessLink[str(fitnessOrdered[0])], fitnessLink[str(fitnessOrdered[1])])
-		print("Mating Pairs: \n")
-		print(matingPair,end='\n\n')
+
 		return matingPair
 
 
 	def fitnessEvaluation(self, individual):
+		"""Takes an individual, returns the fitness value (travelCost) by summing the costs of each node"""
+
 		travelCost = 0
 
 
@@ -53,27 +57,41 @@ class GeneticOperations():
 
 
 	def crossover(self, mates):
+		"""Crossover will take mates, and will return one child."""
+
+		child = [""]*len(mother)
+		random.shuffle(mates)	#switching up who is mother and father a bit
 		mother = mates[0]
 		father = mates[1]
 
+		#setting start and endpoints for sequence to be crossed
+		points = sorted(random.sample(list(range(0,len(mother))), 2))
+		selected = mother[points[0]:points[1]]
 
+		
+		child[points[0]:points[1]] = selected
 
+		for index, node in enumerate(father):
+			if not(node in selected) and child[index] == "":
+				child[index] = node
+			else:
+				continue
 
+		return child
 
 	#NEEDS TO BE TESTED
 	def mutation(self, candidiate):
-		point1, point2 = ''
 
 		r = random.randint(1,100)
 		r = r/100
 
-		if r == self.params.mutationRate:
-			while point1 == point2:
-				point1 = random.choice(candidate)
-				point2 = random.choice(candidate)
 
-			candidate[candidate.index(point1)] = point2
-			candidate[candidate.index(point2)] = point1
+
+		if r == self.params.mutationRate:
+			points = sorted(random.sample(list(range(0,len(mother))), 2))
+
+			candidate[candidate.index(points[0])] = point2
+			candidate[candidate.index(points[1])]= point1
 			return candidate
 		else:
 			return candidate
@@ -111,26 +129,33 @@ def Evolution(population, params):
 		mates = []
 
 		#run for half the population. Each mate pair will make two children
-		for x in range(0, int(params['populationSize']/2)):
+		while len(newPopulation) != params['populationSize']:
 			mates = G.tournamentSelection(population)
-			continue
 			children = G.crossover(mates)
-			newPopulation.extend(children)
+			newPopulation.append(child)
 
-		continue
 		for candidate in newPopulation:
 			#Attempts to mutate. If mutation does not occur then return candidate back to population to restart cycle
 			population.append(mutate(candidate, newPopulation))
 
-	lowestCost = 10**5
+	costs = []
 	for individual in population:
-		cost = G.fitnessEvaluation(individual)
-		if cost < lowestCost:
-			lowestCost = cost
-			fittestIndividual = individual
+		costs.append(G.fitnessEvaluation(individual))
 
-	print("Fittest Individual: " + ' '.join(list(map(str, individual))), end='\n')
+
+	lowestsCost = min(costs)
+	selectIndiv = population[costs.index(lowestCost)]
+
+
+
+	print("Fittest Individual: " + ' '.join(list(map(str, selectIndiv))), end='\n')
 	print("Travel Cost: " + str(lowestCost),end='\n')
+
+
+
+def display():
+	pass
+
 
 
 def main():

@@ -1,6 +1,5 @@
 import random
 
-
 class GeneticOperations():
 	def __init__(self):
 
@@ -59,39 +58,36 @@ class GeneticOperations():
 	def crossover(self, mates):
 		"""Crossover will take mates, and will return one child."""
 
-		child = [""]*len(mother)
-		random.shuffle(mates)	#switching up who is mother and father a bit
+		mates = list(mates)
+		random.shuffle(mates)#switching up who is mother and father a bit
 		mother = mates[0]
 		father = mates[1]
+		child = [""]*len(mother)
+
 
 		#setting start and endpoints for sequence to be crossed
 		points = sorted(random.sample(list(range(0,len(mother))), 2))
 		selected = mother[points[0]:points[1]]
-
-		
 		child[points[0]:points[1]] = selected
 
 		for index, node in enumerate(father):
-			if not(node in selected) and child[index] == "":
+			if not(node in selected) and child[index] == '':
 				child[index] = node
 			else:
 				continue
-
 		return child
 
 	#NEEDS TO BE TESTED
-	def mutation(self, candidiate):
+	def mutation(self, candidate):
 
 		r = random.randint(1,100)
 		r = r/100
 
 
 
-		if r == self.params.mutationRate:
-			points = sorted(random.sample(list(range(0,len(mother))), 2))
-
-			candidate[candidate.index(points[0])] = point2
-			candidate[candidate.index(points[1])]= point1
+		if r == self.params['mutationRate']:
+			points = sorted(random.sample(list(range(0,len(candidate))), 2))
+			candidate[points[0]], candidate[points[1]] = candidate[points[1]], candidate[points[0]]
 			return candidate
 		else:
 			return candidate
@@ -103,7 +99,7 @@ def generatePopulation(size,eleSize):
 	lang = tuple([ x for x in range(2,eleSize+1) ]) #generating matching node names
 
 	#Loop creates the n number of candidates
-	for candidiate in range(0, size):
+	for candidate in range(0, size):
 
 		chromosome = []
 		poss = list(lang)
@@ -114,6 +110,8 @@ def generatePopulation(size,eleSize):
 			selected = random.choice(poss) #randomly chooses a possible node
 			del poss[poss.index(selected)] #deletes that node so it doesnt repeat
 			chromosome.append(selected)
+
+		chromosome.insert(0,1)
 		P.append(chromosome)
 
 	return P
@@ -122,6 +120,7 @@ def generatePopulation(size,eleSize):
 #Controlling Evolution function. Actual generation iteration happens here
 def Evolution(population, params):
 	print(population, end='\n\n')
+	input('Ready?')
 
 	#TERMINATION CONDITION GOES HERE
 	for x in range(0, params['generationNumber']):
@@ -131,12 +130,12 @@ def Evolution(population, params):
 		#run for half the population. Each mate pair will make two children
 		while len(newPopulation) != params['populationSize']:
 			mates = G.tournamentSelection(population)
-			children = G.crossover(mates)
+			child = G.crossover(mates)
 			newPopulation.append(child)
 
 		for candidate in newPopulation:
 			#Attempts to mutate. If mutation does not occur then return candidate back to population to restart cycle
-			population.append(mutate(candidate, newPopulation))
+			population.append(G.mutation(candidate))
 
 	costs = []
 	for individual in population:
@@ -186,3 +185,7 @@ def main():
 
 	population = generatePopulation(G.params['populationSize'], len(Nodes))
 	Evolution(population, G.params)
+
+
+if __name__ == '__main__':
+	main()

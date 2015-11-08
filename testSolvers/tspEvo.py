@@ -7,7 +7,7 @@ class GeneticOperations():
 			'populationSize': 20,
 			'tournamentNumber': 3,
 			'generationNumber': 1,
-			'mutationRate': .01
+			'mutationRate': (1,2)
 		}
 	def distance(self, p1, p2):
 		#calculates distance from two points
@@ -56,44 +56,72 @@ class GeneticOperations():
 
 
 	def crossover(self, mates):
-		"""Crossover will take mates, and will return one child."""
+		"""
+		Crossover will take mates, and will return one child.
+		A splice is taken from the mother and inserted into child
+		The nodes in the father are added to the child, if and only if, they do not
+		appear in the splice. Offspring cannot have duplicates.
+
+		"""
 
 		mates = list(mates)
 		random.shuffle(mates)#switching up who is mother and father a bit
 		mother = mates[0]
 		father = mates[1]
-		child = [""]*len(mother)
+		child = [None] * len(mother)
 
 
-		#setting start and endpoints for sequence to be crossed
+
+		#setting start and endpoints for sequence to be crossed. Sorted makes sure its always
+		#in least to greatest. Sample makes sure there are no duplicates
 		points = sorted(random.sample(list(range(0,len(mother))), 2))
-		selected = mother[points[0]:points[1]]
-		child[points[0]:points[1]] = selected
+		start = points[0]
+		end = points[1]
 
-		for index, node in enumerate(father):
-			if not(node in selected) and child[index] == '':
-				child[index] = node
-			else:
-				continue
-		return child
+		spliced = mother[start:end]
+		child[start:end] = spliced
+		print('initial Child: ', child)
 
-	#NEEDS TO BE TESTED
+		pointer = 0
+		for index, slot in enumerate(child):
+			if slot == None:
+				gene = father[pointer]
+				while gene in spliced:
+					pointer +=1
+					gene = father[pointer]
+
+				child[index] = father[pointer]
+				pointer += 1
+
+		print("Mother: ", mother)
+		print("Father: ", father)
+		print("Points: ", points)
+		print('Spliced: ', spliced)
+		print('Final Child: ', child)
+
 	def mutation(self, candidate):
-
+		"""
+			Mutation is vital to add genetic diversity
+			a random number, r, is generated and if that matches the mutation rate then a swap mutation will occur
+			a swap is necessary in order to produce a valid sequence
+		"""
 		r = random.randint(1,100)
-		r = r/100
 
 
-
-		if r == self.params['mutationRate']:
+		if r in self.params['mutationRate']:
+			print("Mutation will occur on: ", candidate)
 			points = sorted(random.sample(list(range(0,len(candidate))), 2))
 			candidate[points[0]], candidate[points[1]] = candidate[points[1]], candidate[points[0]]
+			print("Candidate after mutation: ", candidate)
 			return candidate
 		else:
 			return candidate
 
 #Function will create initial Population. Size is length of pop, eleSize is length of TSP
 def generatePopulation(size,eleSize):
+	"""
+	Creates the initial population. 1 is the origin so it must be the first node
+	"""
 
 	P = [] #holds population
 	lang = tuple([ x for x in range(2,eleSize+1) ]) #generating matching node names
@@ -137,23 +165,23 @@ def Evolution(population, params):
 			#Attempts to mutate. If mutation does not occur then return candidate back to population to restart cycle
 			population.append(G.mutation(candidate))
 
+		display(population, x)
+
+
+
+def display(population, x):
 	costs = []
 	for individual in population:
 		costs.append(G.fitnessEvaluation(individual))
-
 
 	lowestsCost = min(costs)
 	selectIndiv = population[costs.index(lowestCost)]
 
 
-
+	print("Generation Number: ", x,end="\n")
 	print("Fittest Individual: " + ' '.join(list(map(str, selectIndiv))), end='\n')
 	print("Travel Cost: " + str(lowestCost),end='\n')
-
-
-
-def display():
-	pass
+	input("Continue...")
 
 
 

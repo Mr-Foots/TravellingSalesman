@@ -4,7 +4,7 @@ from collections import OrderedDict
 class GeneticOperations():
 	def __init__(self):
 		self.params = {
-			'populationSize': 20,
+			'populationSize': 30,
 			'tournamentNumber': 3,
 			'elitismRate': int(1/10),
 			'eliteSurvivors': (populationSize * elitismRate),
@@ -108,13 +108,13 @@ class GeneticOperations():
 			a swap is necessary in order to produce a valid sequence
 		"""
 		r = random.randint(1,100)
-
+		chromosome = list(chromosome)
 		if r in self.params['mutationRate']:
 			points = sorted(random.sample(list(range(0,len(chromosome))), 2))
 			chromosome[points[0]], chromosome[points[1]] = chromosome[points[1]], chromosome[points[0]]
-			return chromosome
+			return ''.join(chromosome)
 		else:
-			return chromosome
+			return ''.join(chromosome)
 
 #Function will create initial Population. Size is length of pop, eleSize is length of TSP
 def generatePopulation(pSize, instanceSize):
@@ -145,6 +145,7 @@ def generatePopulation(pSize, instanceSize):
 		P.append(chromosome)
 
 	populationLinked = dict(zip(P,F))
+	populationlinked = OrderedDict(sorted(populationlinked.items(), key=lambda t: t[1]))
 
 	return populationLinked
 
@@ -159,6 +160,9 @@ def Evolution(populationLinked, params):
 		newPopulation = []
 		fitnessList = []
 
+		k = list(populationlinked.keys())
+		for i in range(0,params["eliteSurvivors"]):
+			newPopulation.append(k[i])
 
 		#Selection->Crossover->Mutation->Population Replacement
 		while len(newPopulation) != params['populationSize']:
@@ -169,35 +173,24 @@ def Evolution(populationLinked, params):
 
 
 		#Calculating Fitness, adding it to dictionary for easy lookup
-		for chromosome in population:
+		for chromosome in newPopulation:
 			fitnessList.append(G.fitnessEvaluation(chromosome))
 		populationLinked = dict(zip(population, fitnessList))
+		populationlinked = OrderedDict(sorted(populationlinked.items(), key=lambda t: t[1]))
+
+		display(populationLinked, generation)
 
 
 
+def display(populationLinked, generation):
+	fittest = list(populationLinked.keys())[0]
+	fittestFitValue = populationLinked[fittest]
+	averageFitness = int(sum(list(populationLinked.values()))/len(populationLinked))
 
-
-
-		population = newPopulation
-		print('New Population: ')
-		[print(i,end='\n') for i in population]
-		print('\n\n')
-		display(population, generation)
-
-
-
-def display(population, x):
-	costs = []
-	for chromosome in population:
-		costs.append(G.fitnessEvaluation(chromosome))
-
-	lowestCost = min(costs)
-	selectIndiv = population[costs.index(lowestCost)]
-
-
-	print("Generation Number: ", x,end="\n")
-	print("Fittest Chromosome: " + ' '.join(list(map(str, selectIndiv))), end='\n')
-	print("Travel Cost: " + str(lowestCost),end='\n')
+	print("Generation Number: ", generation,end="\n")
+	print("Fittest Chromosome: ", fittest ,end='\n')
+	print("Travel Cost: ", fittestFitValue, end='\n')
+	print("Average Fitness: ", averageFitness, end='\n')
 	input("Continue...")
 
 

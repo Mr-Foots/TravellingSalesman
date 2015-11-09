@@ -7,10 +7,11 @@ class GeneticOperations():
 			'populationSize': 30,
 			'tournamentNumber': 3,
 			'elitismRate': int(1/10),
-			'eliteSurvivors': (populationSize * elitismRate),
 			'generationNumber': 20,
 			'mutationRate': (1,2,3,4,5)
 		}
+		self.params['eliteSurvivors']= self.params['populationSize'] * self.params['elitismRate']
+
 	def distance(self, p1, p2):
 		#calculates distance from two points
 		d = (((p2[0] - p1[0])**2) + ((p2[1] - p1[1])**2))**.5
@@ -28,7 +29,7 @@ class GeneticOperations():
 		fitnessValues = []
 
 		#randomly selects n number of chromosomes from the population. Sample is great because it cannot select repeats
-		selectedChromosomes = random.sample(list(populationLinked), self.params['tournamentNumber'])
+		selectedChromosomes = random.sample(list(populationLinked.keys()), self.params['tournamentNumber'])
 
 		[ fitnessValues.append(populationLinked[i]) for i in selectedChromosomes ]
 		fitnessLink = dict(zip(list(map(str, fitnessValues)), selectedChromosomes))
@@ -44,11 +45,10 @@ class GeneticOperations():
 		"""Takes an chromosome, returns the fitness value (travelCost) by summing the costs of each node"""
 
 		travelCost = 0
-
 		#loop will go through each node and calculate the distance between the two of them
 		for i in range(1, len(chromosome)):
-			p1 = Nodes[chromosome[i-1]]
-			p2 = Nodes[chromosome[i]]
+			p1 = Nodes[str(chromosome[i-1])]
+			p2 = Nodes[str(chromosome[i])]
 			travelCost += self.distance(p2, p1) #distance formula
 
 		return travelCost
@@ -64,10 +64,10 @@ class GeneticOperations():
 
 		"""
 
-		mates = list(mates)
+		mates = [convertType(l=mates[0]),convertType(l=mates[1])]
 		random.shuffle(mates)#switching up who is mother and father a bit
-		mother = list(mates[0])
-		father = list(mates[1])
+		mother = mates[0]
+		father = mates[1]
 		offspring = [None] * len(mother)
 
 
@@ -99,7 +99,7 @@ class GeneticOperations():
 		#print('Final Child: ', offspring)
 		#print('\n\n')
 
-		return ''.join(offspring)
+		return offspring
 
 	def mutation(self, chromosome):
 		"""
@@ -108,13 +108,13 @@ class GeneticOperations():
 			a swap is necessary in order to produce a valid sequence
 		"""
 		r = random.randint(1,100)
-		chromosome = list(chromosome)
+
 		if r in self.params['mutationRate']:
 			points = sorted(random.sample(list(range(0,len(chromosome))), 2))
 			chromosome[points[0]], chromosome[points[1]] = chromosome[points[1]], chromosome[points[0]]
-			return ''.join(chromosome)
+			return convertType(l=chromosome)
 		else:
-			return ''.join(chromosome)
+			return convertType(l=chromosome)
 
 #Function will create initial Population. Size is length of pop, eleSize is length of TSP
 def generatePopulation(pSize, instanceSize):
@@ -139,13 +139,13 @@ def generatePopulation(pSize, instanceSize):
 			chromosome.append(selected)
 
 		chromosome.insert(0,1)
-		chromosome = ''.join(chromosome)
+		f = G.fitnessEvaluation(chromosome)
 
-		F.append(G.fitnessEvaluation(chromosome))
-		P.append(chromosome)
+		F.append(f)
+		P.append(convertType(l=chromosome))
 
 	populationLinked = dict(zip(P,F))
-	populationlinked = OrderedDict(sorted(populationlinked.items(), key=lambda t: t[1]))
+	populationLinked = OrderedDict(sorted(populationLinked.items(), key=lambda t: t[1]))
 
 	return populationLinked
 
@@ -153,14 +153,15 @@ def generatePopulation(pSize, instanceSize):
 #Controlling Evolution function. Actual generation iteration happens here
 def Evolution(populationLinked, params):
 	print("Initial Population: ")
-	[ print(chromosome,end='\n') for chromosome in populationlinked.keys() ]
+	[ print(chromosome,end='\n') for chromosome in populationLinked.keys() ]
 
 	#Generation loop
 	for generation in range(0, params['generationNumber']):
 		newPopulation = []
 		fitnessList = []
 
-		k = list(populationlinked.keys())
+		#Elitism
+		k = list(populationLinked.keys())
 		for i in range(0,params["eliteSurvivors"]):
 			newPopulation.append(k[i])
 
@@ -168,15 +169,15 @@ def Evolution(populationLinked, params):
 		while len(newPopulation) != params['populationSize']:
 			mates = G.tournamentSelection(populationLinked)
 			offspring = G.crossover(mates)
-			finalChild = G.mutation(offspring)
-			newPopulation.append(finalChild)
+			finalOffspring = G.mutation(offspring)
+			newPopulation.append(finalOffspring)
 
 
 		#Calculating Fitness, adding it to dictionary for easy lookup
 		for chromosome in newPopulation:
-			fitnessList.append(G.fitnessEvaluation(chromosome))
-		populationLinked = dict(zip(population, fitnessList))
-		populationlinked = OrderedDict(sorted(populationlinked.items(), key=lambda t: t[1]))
+			fitnessList.append(G.fitnessEvaluation(convertType(s=chromosome)))
+		populationLinked = dict(zip(newPopulation, fitnessList))
+		populationLinked = OrderedDict(sorted(populationLinked.items(), key=lambda t: t[1]))
 
 		display(populationLinked, generation)
 
@@ -193,9 +194,20 @@ def display(populationLinked, generation):
 	print("Average Fitness: ", averageFitness, end='\n')
 	input("Continue...")
 
+def convertType(l=False, s=False):
+	if l:
+		l = list(map(str, l))
+		[l.insert(i," ") for i in range(0, len(l)) if i % 2]
+		return ''.join(l)
+	elif s:
+		s = s.split(" ")
+		s = s.remove(" ")
+		return list(map(int, s))
 
 
-def main(nodes, instanceSize):
+def main(nodes=None, instanceSize=None):
+	if not(instanceSize):
+		instanceSize = len(Nodes)
 
 	populationLinked = generatePopulation(G.params['populationSize'], instanceSize)
 	Evolution(populationLinked, G.params)
@@ -221,4 +233,4 @@ if __name__ == '__main__':
 		'15': (845.0, 680.0)
 	}
 
-	main(Nodes)
+	main()

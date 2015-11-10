@@ -1,59 +1,44 @@
 import random
+import os
 from collections import OrderedDict
 
 class GeneticOperations():
 	def __init__(self):
 		self.params = {
-			'populationSize': 30,
-			'tournamentNumber': 3,
-			'elitismRate': int(1/10),
-			'generationNumber': 20,
-			'mutationRate': (1,2,3,4,5)
+			'populationSize': 200,
+			'tournamentNumber': 4,
+			'elitismRate': float(1/10),
+			'generationNumber': 200,
+			'mutationRate': (1,2,3,4)
 		}
-		self.params['eliteSurvivors']= self.params['populationSize'] * self.params['elitismRate']
+		self.params['eliteNum']= int(self.params['populationSize'] * self.params['elitismRate'])
 
 	def distance(self, p1, p2):
 		#calculates distance from two points
-		d = (((p2[0] - p1[0])**2) + ((p2[1] - p1[1])**2))**.5
-		return int(d)
-
-
+		return int((((p2[0] - p1[0])**2) + ((p2[1] - p1[1])**2))**.5)
 
 	def tournamentSelection(self, populationLinked):
 		"""
 			Function will select three chromosomes, then make the mating pair
-			fitnessLink maps the sequence to the fitness Value for easy comparison and sorting
+			fitnessOrdered sorts the chromosomes by fitness and returns the first two(lowest fitness)
 		"""
 
-		fitnessLink = {}
-		fitnessValues = []
-
 		#randomly selects n number of chromosomes from the population. Sample is great because it cannot select repeats
-		selectedChromosomes = random.sample(list(populationLinked.keys()), self.params['tournamentNumber'])
+		selectedChromosomes = random.sample(list(populationLinked.items()), self.params['tournamentNumber'])
+		fitnessOrdered = sorted(selectedChromosomes, key=lambda t: t[1])
+		return (fitnessOrdered[0][0], fitnessOrdered[1][0]) #Returns the mates
 
-		[ fitnessValues.append(populationLinked[i]) for i in selectedChromosomes ]
-		fitnessLink = dict(zip(list(map(str, fitnessValues)), selectedChromosomes))
 
-		#to find the sequences with the lowest travel time, the fitness values are sorted and matched aganist the orginal dictionary
-		fitnessOrdered = sorted(map(int, fitnessLink.keys()))
-		matingPair = (fitnessLink[str(fitnessOrdered[0])], fitnessLink[str(fitnessOrdered[1])])
-
-		return matingPair
 
 
 	def fitnessEvaluation(self, chromosome):
-		"""Takes an chromosome, returns the fitness value (travelCost) by summing the costs of each node"""
+		"""
+			Takes an chromosome, returns the fitness value (travelCost) by summing the costs of each node
+			A more fit chromosome will have a lower fitness value (held by var travelCost)
+		"""
 
-		travelCost = 0
-		#loop will go through each node and calculate the distance between the two of them
-		for i in range(1, len(chromosome)):
-			p1 = Nodes[str(chromosome[i-1])]
-			p2 = Nodes[str(chromosome[i])]
-			travelCost += self.distance(p2, p1) #distance formula
-
+		travelCost = sum((self.distance(Nodes[chromosome[i-1]], Nodes[chromosome[i]]) for i in range(1, len(chromosome))))
 		return travelCost
-
-
 
 	def crossover(self, mates):
 		"""
@@ -64,12 +49,11 @@ class GeneticOperations():
 
 		"""
 
-		mates = [convertType(l=mates[0]),convertType(l=mates[1])]
+		mates = list(mates)
 		random.shuffle(mates)#switching up who is mother and father a bit
-		mother = mates[0]
-		father = mates[1]
+		mother = list(mates[0])
+		father = list(mates[1])
 		offspring = [None] * len(mother)
-
 
 
 		#setting start and endpoints for sequence to be crossed. Sorted makes sure its always
@@ -92,13 +76,6 @@ class GeneticOperations():
 				offspring[index] = father[pointer]
 				pointer += 1
 
-		#print("Mother: ", mother)
-		#print("Father: ", father)
-		#print("Points: ", points)
-		#print('Spliced: ', spliced)
-		#print('Final Child: ', offspring)
-		#print('\n\n')
-
 		return offspring
 
 	def mutation(self, chromosome):
@@ -108,13 +85,12 @@ class GeneticOperations():
 			a swap is necessary in order to produce a valid sequence
 		"""
 		r = random.randint(1,100)
-
 		if r in self.params['mutationRate']:
-			points = sorted(random.sample(list(range(0,len(chromosome))), 2))
+			points = sorted(random.sample(list(range(1,len(chromosome))), 2))
 			chromosome[points[0]], chromosome[points[1]] = chromosome[points[1]], chromosome[points[0]]
-			return convertType(l=chromosome)
+			return tuple(chromosome)
 		else:
-			return convertType(l=chromosome)
+			return tuple(chromosome)
 
 #Function will create initial Population. Size is length of pop, eleSize is length of TSP
 def generatePopulation(pSize, instanceSize):
@@ -124,10 +100,10 @@ def generatePopulation(pSize, instanceSize):
 
 	P = [] #holds population
 	F = []  #holds Fitness values
-	lang = tuple([ x for x in range(2,instanceSize+1) ]) #generating the 'alphabet' for nodes
+	lang = tuple(range(2,instanceSize+1)) #generating the 'alphabet' for nodes
 
 	#Loop creates the n number of chromosomes
-	for chromosome in range(0, pSize):
+	for individualChromosome in range(0, pSize):
 
 		chromosome = []
 		possible = list(lang)
@@ -141,29 +117,48 @@ def generatePopulation(pSize, instanceSize):
 		chromosome.insert(0,1)
 		f = G.fitnessEvaluation(chromosome)
 
+
+
 		F.append(f)
-		P.append(convertType(l=chromosome))
+		P.append(tuple(chromosome))
 
 	populationLinked = dict(zip(P,F))
 	populationLinked = OrderedDict(sorted(populationLinked.items(), key=lambda t: t[1]))
+
 
 	return populationLinked
 
 
 #Controlling Evolution function. Actual generation iteration happens here
 def Evolution(populationLinked, params):
-	print("Initial Population: ")
-	[ print(chromosome,end='\n') for chromosome in populationLinked.keys() ]
 
+	bestChromosome = list(populationLinked.items())[0]
+	stagnationCounter = 0
 	#Generation loop
 	for generation in range(0, params['generationNumber']):
+
 		newPopulation = []
 		fitnessList = []
 
 		#Elitism
-		k = list(populationLinked.keys())
-		for i in range(0,params["eliteSurvivors"]):
-			newPopulation.append(k[i])
+		elite = list(populationLinked.keys())[:params['eliteNum']]
+		fittestElite = list(populationLinked.items())[0]
+
+		if fittestElite[1] == bestChromosome[1]:
+			stagnationCounter += 1
+		elif fittestElite[1] < bestChromosome[1]:
+			stagnationCounter = 0
+			bestChromosome = fittestElite
+			del elite[elite.index(fittestElite[0])]
+
+		if stagnationCounter == 20:
+			print("Solution Stagnation Detected. Stopping...\n\n")
+			break
+
+		newPopulation.append(bestChromosome[0])
+		newPopulation.extend(elite)
+
+
 
 		#Selection->Crossover->Mutation->Population Replacement
 		while len(newPopulation) != params['populationSize']:
@@ -174,63 +169,41 @@ def Evolution(populationLinked, params):
 
 
 		#Calculating Fitness, adding it to dictionary for easy lookup
-		for chromosome in newPopulation:
-			fitnessList.append(G.fitnessEvaluation(convertType(s=chromosome)))
+		fitnessList = [G.fitnessEvaluation(chromosome) for chromosome in newPopulation]
 		populationLinked = dict(zip(newPopulation, fitnessList))
 		populationLinked = OrderedDict(sorted(populationLinked.items(), key=lambda t: t[1]))
 
-		display(populationLinked, generation)
+		display(populationLinked, generation, bestChromosome)
 
+	print('\n\n\n######################')
+	print('Final Best Chromosome: ', bestChromosome[0])
+	print('Best Travel Cost: ', bestChromosome[1])
 
-
-def display(populationLinked, generation):
+def display(populationLinked, generation, bestChromosome):
+	if len(populationLinked) > 150:
+		print('Generation: ', generation)
+		return
 	fittest = list(populationLinked.keys())[0]
 	fittestFitValue = populationLinked[fittest]
 	averageFitness = int(sum(list(populationLinked.values()))/len(populationLinked))
 
+	print("\n")
+	print("------------------")
 	print("Generation Number: ", generation,end="\n")
+	print('Best Chromosome: ', bestChromosome[0],end='\n')
+	print('Travel Cost: ', bestChromosome[1],end='\n')
 	print("Fittest Chromosome: ", fittest ,end='\n')
 	print("Travel Cost: ", fittestFitValue, end='\n')
 	print("Average Fitness: ", averageFitness, end='\n')
-	input("Continue...")
 
-def convertType(l=False, s=False):
-	if l:
-		l = list(map(str, l))
-		[l.insert(i," ") for i in range(0, len(l)) if i % 2]
-		return ''.join(l)
-	elif s:
-		s = s.split(" ")
-		s = s.remove(" ")
-		return list(map(int, s))
 
 
 def main(nodes=None, instanceSize=None):
-	if not(instanceSize):
-		instanceSize = len(Nodes)
+	global G
+	global Nodes
 
+	os.system('cls')
+	Nodes = nodes
+	G = GeneticOperations()
 	populationLinked = generatePopulation(G.params['populationSize'], instanceSize)
 	Evolution(populationLinked, G.params)
-
-
-if __name__ == '__main__':
-	G = GeneticOperations()
-	Nodes = {
-		'1': (565.0, 575.0),
-		'2': (25.0, 185.0),
-		'3': (345.0, 750.0),
-		'4': (945.0, 685.0),
-		'5': (845.0, 655.0),
-		'6': (880.0, 660.0),
-		'7': (25.0, 230.0),
-		'8': (525.0, 1000.0),
-		'9': (580.0, 1175.0),
-		'10': (650.0, 1130.0),
-		'11': (1605.0, 620.0),
-		'12': (1220.0, 580.0),
-		'13': (1465.0, 200.0),
-		'14': (1530.0, 5.0),
-		'15': (845.0, 680.0)
-	}
-
-	main()
